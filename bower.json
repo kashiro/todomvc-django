@@ -1,0 +1,15 @@
+{
+  "name": "todomvc-django",
+  "authors": [
+    "Tomoyuki Kashiro <ksrtmyk@gmail.com>"
+  ],
+  "description": "",
+  "main": "",
+  "moduleType": [],
+  "license": "MIT",
+  "homepage": "",
+  "dependencies": {
+    "todomvc-app-css": "~2.0.3",
+    "todomvc-common": "~1.0.2"
+  }
+}
