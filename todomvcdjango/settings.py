@@ -26,6 +26,16 @@ TEMPLATE_DEBUG = True
 
 ALLOWED_HOSTS = []
 
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+TEST_APPS = (
+    'todo',
+)
+NOSE_ARGS = [
+    '--with-coverage',
+    '--cover-package=' + ",".join(TEST_APPS),
+    '--cover-branches',
+    '--cover-erase',
+]
 
 # Application definition
 
@@ -36,7 +46,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'todo'
+    'todo',
+    'django_nose'
 )
 
 MIDDLEWARE_CLASSES = (

@@ -3,8 +3,7 @@ from django.contrib import admin
 
 urlpatterns = patterns('',
     # Examples:
-    # url(r'^$', 'todomvcdjango.views.home', name='home'),
-    # url(r'^blog/', include('blog.urls')),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^$', include('todo.urls'), name='todo'),
+    url(r'^todo/$', include('todo.urls')),
+    url(r'^$', include('todo.urls', namespace='todo')),
 )

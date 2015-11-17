@@ -1,62 +1,114 @@
+{% load helper %}
+{% load staticfiles %}
 <!DOCTYPE html>
 <html lang="en" data-framework="django">
 <head>
   <meta charset="UTF-8">
-  <link rel="stylesheet" href="static/todomvc-common/base.css">
-  <link rel="stylesheet" href="static/todomvc-app-css/index.css">
+  <link rel="stylesheet" href="{% static 'todomvc-common/base.css' %}">
+  <link rel="stylesheet" href="{% static 'todomvc-app-css/index.css' %}">
   <title>TodoMVC - django -</title>
+  <style>
+  /* override */
+  .todo-list li .toggle[value=true]:after {
+    content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="-10 -18 100 135"><circle cx="50" cy="50" r="50" fill="none" stroke="#bddad5" stroke-width="3"/><path fill="#5dc2af" d="M72 25L42 71 27 56l-4 4 20 20 34-52z"/></svg>');
+  }
+  .toggle-all[value=true]:before {
+      color: #737373;
+  }
+  </style>
 </head>
 <body>
   <section class="todoapp">
     <header class="header">
       <h1>todos</h1>
-      <form class="todo-form" ng-submit="vm.addTodo()">
-        <input class="new-todo" type="autofocus" placeholder="What needs to be done?" ng-model="newTodo">
+      <form method="POST" action="/todo/" class="todo-form">
+        {% csrf_token %}
+        <input type="hidden" name="method" value="post">
+        <input name="title" class="new-todo" type="autofocus" placeholder="What needs to be done?">
       </form>
     </header>
-    <section class="main" ng-show="todos.length" ng-cloak>
-      <input class="toggle-all" type="checkbox" ng-model="allChecked" ng-click="vm.markAll(checked)">
+    {% if todos.count %}
+    <section class="main">
+      <form method="post" action="/todo/">
+        {% csrf_token %}
+        <input type="hidden" name="method" value="put">
+        <input type="hidden" name="toggle_all" value="{% if all_completed %}false{% else %}true{% endif %}">
+        <button class="toggle-all" type="submit" value="{{ all_completed | lower }}"></button>
+      </form>
       <label for="toggle-all">Mark all as complete</label>
       <ul class="todo-list">
-        <li ng-repeat="todo in todos | filter:statusFilter track by $index" ng-class="{completed: todo.completed, editing: todo === editedTodo}">
+        {% for todo in todos|filter_todo:filter %}
+        <li class="{% if todo.completed %} completed {% endif %}">
           <div class="view">
-            <input class="toggle" type="checkbox" ng-model="todo.completed">
-            <label ng-dblclick="vm.editTodo(todo)">{{todo.title}}</label>
-            <button type="button" class="destroy" ng-click="vm.removeTodo(todo)"></button>
+            <form method="POST" action="/todo/">
+              {% csrf_token %}
+              <input type="hidden" name="method" value="put">
+              <input type="hidden" name="id" value="{{ todo.id }}">
+              <input type="hidden" name="title" value="{{ todo.title }}">
+              <input type="hidden" name="completed" value="{% if todo.completed %}false{% else %}true{% endif %}">
+              <button class="toggle" type="submit" value="{{ todo.completed | lower}}"></button>
+            </form>
+            <label>{{ todo.title }}</label>
+            <form method="POST" action="/todo/">
+              {% csrf_token %}
+              <input type="hidden" name="method" value="delete">
+              <input type="hidden" name="id" value="{{ todo.id }}">
+              <button type="submit" class="destroy"></button>
+            </form>
           </div>
-          <form ng-submit="vm.doneEditing(todo)">
-            <input type="text" class="edit" ng-model="todo.title" todo-blur="vm.doneEditing(todo)" todo-focus="todo ==- editedTodo">
+          <form method="POST" action="/todo/" class="edit-form">
+            {% csrf_token %}
+            <input type="hidden" name="method" value="put">
+            <input type="hidden" name="id" value="{{ todo.id }}">
+            <input type="hidden" name="completed" value="{{ todo.completed }}">
+            <input type="text"   name="title" class="edit" value="{{ todo.title }}">
           </form>
         </li>
+        {% endfor %}
       </ul>
     </section>
-    <footer class="footer" ng-show="todos.length">
-      <span class="todo-count"><strong>{{remainingCount}}</strong>
-        <ng-pluralize count="remainingCount" when="{ one: 'item left', other: 'items left' }"></ng-pluralize>
+    <footer class="footer">
+      <span class="todo-count"><strong>{{ todos | get_incompleted | length }}</strong> item{{ todos|pluralize }} left
       </span>
       <ul class="filters">
         <li>
-          <a ng-class="{selected: location.path() == '/'} " href="#/">All</a>
+          <a class="{% if filter == '' %} selected {% endif %}" href="/">All</a>
         </li>
         <li>
-          <a ng-class="{selected: location.path() == '/active'}" href="#/active">Active</a>
+          <a class="{% if filter == 'active' %} selected {% endif %}" href="/?filter=active">Active</a>
         </li>
         <li>
-          <a ng-class="{selected: location.path() == '/completed'}" href="#/completed">Completed</a>
+          <a class="{% if filter == 'completed' %} selected {% endif %}" href="/?filter=completed">Completed</a>
         </li>
-        </ul>
-      <button class="clear-completed" ng-click="vm.clearDoneTodos()" ng-show="doneCount">Clear completed</button>
+      </ul>
+      {% if todos|get_completed|length %}
+      <form method="POST" action="/todo/">
+        {% csrf_token %}
+        {# html form dose not support delete method #}
+        <input type="hidden" name="method" value="delete">
+        {% for todo in todos|get_completed %}
+        <input type="hidden" name="id" value="{{ todo.id }}">
+        {% endfor %}
+        <button type="submit" class="clear-completed">Clear completed</button>
+      </form>
+      {% endif %}
     </footer>
+    {% endif %}
   </section>
   <footer class="info">
     <p>Double-click to edit a todo</p>
-    <p>Credits:
-      <a href="http://twitter.com/cburgdorf">Christoph Burgdorf</a>,
-      <a href="http://ericbidelman.com">Eric Bidelman</a>,
-      <a href="http://jacobmumm.com">Jacob Mumm</a>
-      <a href="http://blog.igorminar.com">Igor Minar</a> and
-      <a href="http://zamboch.blogspot.com">Pavel Savara</a>
-    </p>
+    <p>Credits:<a href="http://tomoyukikashiro.me">Tomoyuki Kashiro</a></p>
   </footer>
+  <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+  <script>
+  var editingCls = 'editing';
+  $('.todo-list li label').on('dblclick', function(){
+    $(this).parent().parent().addClass(editingCls).find('.edit-form input').focus();
+    return;
+  });
+  $('.todo-list .edit-form input').on('blur', function(){
+    $(this).parent().submit();
+  });
+  </script>
 </body>
 </html>

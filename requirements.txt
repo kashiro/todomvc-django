@@ -1,2 +1,7 @@
 # Framework
 Django==1.8.6
+
+# test
+flake8
+django-nose
+coverage
